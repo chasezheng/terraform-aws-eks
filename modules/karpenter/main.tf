@@ -1,10 +1,7 @@
-data "aws_partition" "current" {}
 data "aws_caller_identity" "current" {}
 
 locals {
   account_id = data.aws_caller_identity.current.account_id
-  partition  = data.aws_partition.current.partition
-  dns_suffix = data.aws_partition.current.dns_suffix
 }
 
 ################################################################################
@@ -103,7 +100,7 @@ data "aws_iam_policy_document" "irsa" {
   statement {
     actions = ["ec2:RunInstances"]
     resources = [
-      "arn:${local.partition}:ec2:*:${local.account_id}:launch-template/*",
+      "arn:aws:ec2:*:${local.account_id}:launch-template/*",
     ]
 
     condition {
@@ -116,13 +113,13 @@ data "aws_iam_policy_document" "irsa" {
   statement {
     actions = ["ec2:RunInstances"]
     resources = [
-      "arn:${local.partition}:ec2:*::image/*",
-      "arn:${local.partition}:ec2:*:${local.account_id}:instance/*",
-      "arn:${local.partition}:ec2:*:${local.account_id}:spot-instances-request/*",
-      "arn:${local.partition}:ec2:*:${local.account_id}:security-group/*",
-      "arn:${local.partition}:ec2:*:${local.account_id}:volume/*",
-      "arn:${local.partition}:ec2:*:${local.account_id}:network-interface/*",
-      "arn:${local.partition}:ec2:*:${coalesce(var.irsa_subnet_account_id, local.account_id)}:subnet/*",
+      "arn:aws:ec2:*::image/*",
+      "arn:aws:ec2:*:${local.account_id}:instance/*",
+      "arn:aws:ec2:*:${local.account_id}:spot-instances-request/*",
+      "arn:aws:ec2:*:${local.account_id}:security-group/*",
+      "arn:aws:ec2:*:${local.account_id}:volume/*",
+      "arn:aws:ec2:*:${local.account_id}:network-interface/*",
+      "arn:aws:ec2:*:${coalesce(var.irsa_subnet_account_id, local.account_id)}:subnet/*",
     ]
   }
 
@@ -288,7 +285,7 @@ locals {
   create_iam_role = var.create && var.create_iam_role
 
   iam_role_name          = coalesce(var.iam_role_name, "Karpenter-${var.cluster_name}")
-  iam_role_policy_prefix = "arn:${local.partition}:iam::aws:policy"
+  iam_role_policy_prefix = "arn:aws:iam::aws:policy"
   cni_policy             = var.cluster_ip_family == "ipv6" ? "${local.iam_role_policy_prefix}/AmazonEKS_CNI_IPv6_Policy" : "${local.iam_role_policy_prefix}/AmazonEKS_CNI_Policy"
 }
 
@@ -301,7 +298,7 @@ data "aws_iam_policy_document" "assume_role" {
 
     principals {
       type        = "Service"
-      identifiers = ["ec2.${local.dns_suffix}"]
+      identifiers = ["ec2.amazonaws.com"]
     }
   }
 }
